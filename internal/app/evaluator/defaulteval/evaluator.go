@@ -51,16 +51,16 @@ type matchInp struct {
 
 // BindService define the initialization steps for this evaluator
 func BindService(p *appmain.Params, b *appmain.Bindings) error {
-	if err := evaluator.BindServiceFor(evaluate)(p, b); err != nil {
+	if err := evaluator.BindServiceFor(Evaluate)(p, b); err != nil {
 		return err
 	}
 	b.RegisterViews(collidedMatchesPerEvaluateView)
 	return nil
 }
 
-// evaluate sorts the matches by DefaultEvaluationCriteria.Score (optional),
+// Evaluate sorts the matches by DefaultEvaluationCriteria.Score (optional),
 // then returns matches which don't collide with previously returned matches.
-func evaluate(ctx context.Context, in <-chan *pb.Match, out chan<- string) error {
+func Evaluate(ctx context.Context, in <-chan *pb.Match, out chan<- string) error {
 	matches := make([]*matchInp, 0)
 	nilEvaluationInputs := 0
 

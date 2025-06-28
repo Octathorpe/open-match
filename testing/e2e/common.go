@@ -23,6 +23,7 @@ import (
 
 	"github.com/pkg/errors"
 	"open-match.dev/open-match/internal/app/evaluator"
+	"open-match.dev/open-match/internal/app/evaluator/defaulteval"
 	"open-match.dev/open-match/internal/appmain/apptest"
 	"open-match.dev/open-match/internal/config"
 	"open-match.dev/open-match/pkg/pb"
@@ -35,8 +36,8 @@ var (
 	testOnlyLoggingLevel         = flag.String("test_only_log_level", "info", "Sets the log level for tests.")
 )
 
-func NewOM(t *testing.T) *om {
-	om := &om{
+func NewOM(t *testing.T) *Om {
+	om := &Om{
 		t: t,
 	}
 	t.Cleanup(func() {
@@ -61,7 +62,7 @@ func NewOM(t *testing.T) *om {
 	return om
 }
 
-type om struct {
+type Om struct {
 	t     *testing.T
 	cfg   config.View
 	fe    pb.FrontendServiceClient
@@ -80,7 +81,7 @@ type om struct {
 	eval       evaluator.Evaluator
 }
 
-func (om *om) SetMMF(mmf mmfService.MatchFunction) {
+func (om *Om) SetMMF(mmf mmfService.MatchFunction) {
 	om.fLock.Lock()
 	defer om.fLock.Unlock()
 
@@ -91,7 +92,7 @@ func (om *om) SetMMF(mmf mmfService.MatchFunction) {
 	om.t.Fatal("Matchmaking function set multiple times")
 }
 
-func (om *om) runMMF(ctx context.Context, profile *pb.MatchProfile, out chan<- *pb.Match) error {
+func (om *Om) runMMF(ctx context.Context, profile *pb.MatchProfile, out chan<- *pb.Match) error {
 	om.fLock.Lock()
 	om.running.Add(1)
 	defer om.running.Done()
@@ -105,7 +106,11 @@ func (om *om) runMMF(ctx context.Context, profile *pb.MatchProfile, out chan<- *
 	return mmf(ctx, profile, out)
 }
 
-func (om *om) SetEvaluator(eval evaluator.Evaluator) {
+func (om *Om) SetDefaultEvaluator() {
+	om.SetEvaluator(defaulteval.Evaluate)
+}
+
+func (om *Om) SetEvaluator(eval evaluator.Evaluator) {
 	om.fLock.Lock()
 	defer om.fLock.Unlock()
 
@@ -116,7 +121,7 @@ func (om *om) SetEvaluator(eval evaluator.Evaluator) {
 	om.t.Fatal("Evaluator function set multiple times")
 }
 
-func (om *om) evaluate(ctx context.Context, in <-chan *pb.Match, out chan<- string) error {
+func (om *Om) evaluate(ctx context.Context, in <-chan *pb.Match, out chan<- string) error {
 	om.fLock.Lock()
 	om.running.Add(1)
 	defer om.running.Done()
@@ -130,19 +135,19 @@ func (om *om) evaluate(ctx context.Context, in <-chan *pb.Match, out chan<- stri
 	return eval(ctx, in, out)
 }
 
-func (om *om) Frontend() pb.FrontendServiceClient {
+func (om *Om) Frontend() pb.FrontendServiceClient {
 	return om.fe
 }
 
-func (om *om) Backend() pb.BackendServiceClient {
+func (om *Om) Backend() pb.BackendServiceClient {
 	return om.be
 }
 
-func (om *om) Query() pb.QueryServiceClient {
+func (om *Om) Query() pb.QueryServiceClient {
 	return om.query
 }
 
-func (om *om) MMFConfigGRPC() *pb.FunctionConfig {
+func (om *Om) MMFConfigGRPC() *pb.FunctionConfig {
 	return &pb.FunctionConfig{
 		Host: om.cfg.GetString("api." + apptest.ServiceName + ".hostname"),
 		Port: int32(om.cfg.GetInt("api." + apptest.ServiceName + ".grpcport")),
@@ -150,7 +155,7 @@ func (om *om) MMFConfigGRPC() *pb.FunctionConfig {
 	}
 }
 
-func (om *om) MMFConfigHTTP() *pb.FunctionConfig {
+func (om *Om) MMFConfigHTTP() *pb.FunctionConfig {
 	return &pb.FunctionConfig{
 		Host: om.cfg.GetString("api." + apptest.ServiceName + ".hostname"),
 		Port: int32(om.cfg.GetInt("api." + apptest.ServiceName + ".httpport")),

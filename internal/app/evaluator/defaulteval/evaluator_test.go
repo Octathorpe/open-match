@@ -188,7 +188,7 @@ func TestEvaluate(t *testing.T) {
 			}
 			close(in)
 
-			err := evaluate(context.Background(), in, out)
+			err := Evaluate(context.Background(), in, out)
 			require.Nil(t, err)
 
 			gotMatchIDs := []string{}

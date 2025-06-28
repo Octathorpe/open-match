@@ -218,7 +218,7 @@ func TestAcknowledgeBackfillDeletedTicket(t *testing.T) {
 	require.Equal(t, conn, ticket.Assignment.Connection)
 }
 
-func createMatchWithBackfill(ctx context.Context, om *om, b *pb.Backfill, t *testing.T) []string {
+func createMatchWithBackfill(ctx context.Context, om *Om, b *pb.Backfill, t *testing.T) []string {
 	t1, err := om.Frontend().CreateTicket(ctx, &pb.CreateTicketRequest{
 		Ticket: &pb.Ticket{
 			SearchFields: &pb.SearchFields{
